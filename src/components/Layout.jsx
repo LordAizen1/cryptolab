@@ -7,14 +7,28 @@ import {
   Home, 
   Info, 
   Users, 
-  UserCircle, 
-  LogOut, 
-  Settings, 
   Newspaper, 
   FlaskRound as Flask,
   Menu,
   X
 } from 'lucide-react';
+import { initializeApp } from 'firebase/app';
+import { getDatabase, ref, runTransaction } from 'firebase/database';
+
+// Firebase configuration
+const firebaseConfig = {
+  apiKey: "AlzaSyCpqT3WboqvQ0wTR3CwyyPGw99qqo0Bmqw",
+  authDomain: "cryptoportal-d7454.firebaseapp.com",
+  databaseURL: "https://cryptoportal-d7454-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "cryptoportal-d7454",
+  storageBucket: "cryptoportal-d7454.appspot.com",
+  messagingSenderId: "664502013777",
+  appId: "1:664502013777:web:e943bc538a2ef050b6cd70", // Replace with your actual appId
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
 const navigation = [
   { name: 'Home', href: '/', icon: Home },
@@ -29,26 +43,44 @@ const navigation = [
 
 export default function Layout({ children }) {
   const location = useLocation();
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const dropdownRef = useRef(null);
   const mobileMenuRef = useRef(null);
   const [indicatorStyle, setIndicatorStyle] = useState({});
   const navRefs = useRef({});
+  const [visitorCount, setVisitorCount] = useState(0);
+  const hasIncremented = useRef(false); // Flag to track if the count has been incremented
 
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsProfileOpen(false);
-      }
-      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) {
-        setIsMobileMenuOpen(false);
-      }
+    if (!hasIncremented.current) { // Only run if the count hasn't been incremented yet
+      const visitorRef = ref(db, 'visitors/count');
+
+      console.log('Incrementing visitor count...'); // Debug log
+
+      // Use a transaction to increment the count
+      runTransaction(visitorRef, (currentCount) => {
+        if (currentCount === null) {
+          // If the count doesn't exist, initialize it to 1
+          return 1;
+        }
+        // Increment the count
+        return currentCount + 1;
+      })
+        .then((result) => {
+          console.log('Visitor count updated:', result.snapshot.val()); // Debug log
+          // Set the visitor count in the state
+          setVisitorCount(result.snapshot.val());
+          hasIncremented.current = true; // Mark as incremented
+        })
+        .catch((error) => {
+          console.error('Error updating visitor count:', error);
+        });
     }
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    // Cleanup function to reset the flag if the component unmounts
+    return () => {
+      hasIncremented.current = false;
+    };
+  }, []); // Empty dependency array ensures this runs only once
 
   // Update indicator position when location changes
   useEffect(() => {
@@ -107,48 +139,8 @@ export default function Layout({ children }) {
                   );
                 })}
               </div>
-              
-              <div className="ml-4 relative" ref={dropdownRef}>
-                <button
-                  onClick={() => setIsProfileOpen(!isProfileOpen)}
-                  className="flex items-center text-white hover:text-[rgb(224,204,250)] hover:bg-[rgb(49,10,101)] px-3 py-2 rounded-md text-sm font-medium transition-all duration-300"
-                >
-                  <UserCircle className="h-6 w-6" />
-                </button>
-                
-                {isProfileOpen && (
-                  <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-[#23262d] ring-1 ring-black ring-opacity-5 border border-[rgb(136,58,234)]">
-                    <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
-                      <Link
-                        to="/profile"
-                        className="flex items-center px-4 py-2 text-sm text-white hover:bg-[rgb(49,10,101)] hover:text-[rgb(224,204,250)]"
-                        role="menuitem"
-                      >
-                        <UserCircle className="mr-3 h-5 w-5" />
-                        Profile
-                      </Link>
-                      <Link
-                        to="/settings"
-                        className="flex items-center px-4 py-2 text-sm text-white hover:bg-[rgb(49,10,101)] hover:text-[rgb(224,204,250)]"
-                        role="menuitem"
-                      >
-                        <Settings className="mr-3 h-5 w-5" />
-                        Settings
-                      </Link>
-                      <button
-                        className="flex w-full items-center px-4 py-2 text-sm text-white hover:bg-[rgb(49,10,101)] hover:text-[rgb(224,204,250)]"
-                        role="menuitem"
-                      >
-                        <LogOut className="mr-3 h-5 w-5" />
-                        Sign out
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
             </div>
 
-            {/* Rest of the code remains exactly the same */}
             {/* Mobile menu button */}
             <div className="md:hidden flex items-center gap-2">
               <div className="relative" ref={mobileMenuRef}>
@@ -185,41 +177,10 @@ export default function Layout({ children }) {
                           );
                         })}
                       </div>
-                      
-                      <div className="border-t border-[rgb(49,10,101)] mt-2 pt-2 grid grid-cols-3 gap-1">
-                        <Link
-                          to="/profile"
-                          className="flex flex-col items-center justify-center p-3 rounded-md text-sm font-medium text-white hover:bg-[rgb(49,10,101)] hover:text-[rgb(224,204,250)]"
-                        >
-                          <UserCircle className="h-5 w-5 mb-1" />
-                          <span className="text-xs">Profile</span>
-                        </Link>
-                        <Link
-                          to="/settings"
-                          className="flex flex-col items-center justify-center p-3 rounded-md text-sm font-medium text-white hover:bg-[rgb(49,10,101)] hover:text-[rgb(224,204,250)]"
-                        >
-                          <Settings className="h-5 w-5 mb-1" />
-                          <span className="text-xs">Settings</span>
-                        </Link>
-                        <button
-                          className="flex flex-col items-center justify-center p-3 rounded-md text-sm font-medium text-white hover:bg-[rgb(49,10,101)] hover:text-[rgb(224,204,250)]"
-                        >
-                          <LogOut className="h-5 w-5 mb-1" />
-                          <span className="text-xs">Logout</span>
-                        </button>
-                      </div>
                     </div>
                   </div>
                 )}
               </div>
-              
-              {/* Mobile Profile Button */}
-              <button
-                onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="md:hidden text-white hover:text-[rgb(224,204,250)] focus:outline-none p-2 rounded-md hover:bg-[rgb(49,10,101)] transition-all duration-300"
-              >
-                <UserCircle className="h-6 w-6" />
-              </button>
             </div>
           </div>
         </div>
@@ -259,6 +220,9 @@ export default function Layout({ children }) {
                 IIIT Delhi<br />
                 Okhla Industrial Estate, Phase III<br />
                 New Delhi, India
+              </p>
+              <p className="text-white mt-4">
+                Visitors: {visitorCount}
               </p>
             </div>
           </div>

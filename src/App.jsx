@@ -10,7 +10,7 @@ import Members from "./pages/Members";
 import About from "./pages/About";
 import Blog from "./pages/Blogs";
 import Labs from "./pages/Labs";
-import UserProfile from "./pages/UserProfile";
+// import UserProfile from "./pages/UserProfile";
 import ScrollToTop from "./components/ScrollToTop"; // Import ScrollToTop
 
 function App() {
@@ -26,7 +26,7 @@ function App() {
           <Route path="/events" element={<Events />} />
           <Route path="/members" element={<Members />} />
           <Route path="/about" element={<About />} />
-          <Route path="/profile" element={<UserProfile />} />
+          {/* <Route path="/profile" element={<UserProfile />} /> */}
           <Route path='/blog' element={<Blog />} />
           <Route path='/labs' element={<Labs />} />
         </Routes>
