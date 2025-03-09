@@ -19,9 +19,9 @@ export default function About() {
     >
       {/* Heading */}
       <motion.div className="text-center" initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.2 }}>
-        <h1 className="text-4xl font-bold text-white mb-4">About Cryptolab</h1>
+        <h1 className="text-4xl font-bold text-white mb-4">About VeilCode Labs</h1>
         <p className="text-[rgb(224,204,250)] text-lg max-w-3xl mx-auto">
-          Cryptolab is IIIT Delhi's premier platform for cryptography education and research,
+          VeilCode Labs is IIIT Delhi's premier platform for cryptography education and research,
           fostering collaboration and excellence in the field of cryptography and security.
         </p>
       </motion.div>
