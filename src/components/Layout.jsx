@@ -10,7 +10,8 @@ import {
   Newspaper, 
   FlaskRound as Flask,
   Menu,
-  X
+  X,
+  ArrowUp // Import the ArrowUp icon for the scroll-to-top button
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, runTransaction } from 'firebase/database';
@@ -50,6 +51,36 @@ export default function Layout({ children }) {
   const [visitorCount, setVisitorCount] = useState(0);
   const hasIncremented = useRef(false); // Flag to track if the count has been incremented
 
+  // State for scroll-to-top button visibility
+  const [showScrollToTop, setShowScrollToTop] = useState(false);
+
+  // Scroll event listener to show/hide the scroll-to-top button
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowScrollToTop(true);
+      } else {
+        setShowScrollToTop(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+
+    // Cleanup the event listener on component unmount
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
+  // Function to scroll to the top
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth', // Smooth scroll
+    });
+  };
+
+  // Visitor count logic (unchanged)
   useEffect(() => {
     if (!hasIncremented.current) { // Only run if the count hasn't been incremented yet
       const visitorRef = ref(db, 'visitors/count');
@@ -189,6 +220,16 @@ export default function Layout({ children }) {
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         {children}
       </main>
+
+      {/* Scroll-to-top button */}
+      {showScrollToTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-8 right-8 p-3 bg-[rgb(136,58,234)] text-white rounded-full shadow-lg hover:bg-[rgb(49,10,101)] transition-all duration-300"
+        >
+          <ArrowUp className="h-6 w-6" />
+        </button>
+      )}
 
       <footer className="bg-[#23262d] text-white mt-auto">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
