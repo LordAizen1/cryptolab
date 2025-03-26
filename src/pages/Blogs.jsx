@@ -1,31 +1,31 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from "framer-motion";
 import { Calendar, User, MessageSquare } from 'lucide-react';
-
-const initialBlogs = [
-  {
-    id: 1,
-    title: 'Understanding Zero-Knowledge Proofs',
-    content: 'Zero-knowledge proofs are cryptographic methods by which one party can prove to another party that a given statement is true...',
-    author: 'Dr. Sarah Johnson',
-    date: '2024-03-01',
-    image: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&q=80&w=1000',
-    tags: ['Cryptography', 'ZKP', 'Privacy'],
-    comments: 12,
-  },
-  {
-    id: 2,
-    title: 'The Future of Post-Quantum Cryptography',
-    content: 'As quantum computers continue to evolve, the need for quantum-resistant cryptographic algorithms becomes increasingly important...',
-    author: 'Prof. Michael Chen',
-    date: '2024-02-28',
-    image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=1000',
-    tags: ['Quantum', 'Security', 'Research'],
-    comments: 8,
-  },
-];
+import { firestore } from '../firebase';
+import { collection, getDocs } from 'firebase/firestore';
 
 export default function Blog() {
+  const [blogs, setBlogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchBlogs = async () => {
+      const querySnapshot = await getDocs(collection(firestore, 'blogs'));
+      const blogsList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setBlogs(blogsList);
+      setLoading(false);
+    };
+    fetchBlogs();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-white">Loading blogs...</div>
+      </div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -53,7 +53,7 @@ export default function Blog() {
       </div>
 
       <div className="grid gap-8">
-        {initialBlogs.map((blog, index) => (
+        {blogs.map((blog, index) => (
           <motion.div
             key={blog.id}
             initial={{ opacity: 0, y: 20 }}
@@ -74,17 +74,19 @@ export default function Blog() {
                 <h2 className="text-2xl font-bold text-white mb-2">{blog.title}</h2>
                 <p className="text-[rgb(224,204,250)] mb-4">{blog.content}</p>
                 
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {blog.tags.map((tag, i) => (
-                    <motion.span
-                      key={i}
-                      whileHover={{ scale: 1.1 }}
-                      className="bg-[rgb(49,10,101)] text-[rgb(224,204,250)] px-2 py-1 rounded-md text-sm"
-                    >
-                      {tag}
-                    </motion.span>
-                  ))}
-                </div>
+                {blog.tags && (
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {blog.tags.map((tag, i) => (
+                      <motion.span
+                        key={i}
+                        whileHover={{ scale: 1.1 }}
+                        className="bg-[rgb(49,10,101)] text-[rgb(224,204,250)] px-2 py-1 rounded-md text-sm"
+                      >
+                        {tag}
+                      </motion.span>
+                    ))}
+                  </div>
+                )}
 
                 <div className="flex items-center justify-between text-[rgb(224,204,250)]">
                   <div className="flex items-center space-x-4">
@@ -99,7 +101,7 @@ export default function Blog() {
                   </div>
                   <div className="flex items-center">
                     <MessageSquare className="h-4 w-4 mr-2" />
-                    {blog.comments} Comments
+                    {blog.comments || 0} Comments
                   </div>
                 </div>
               </div>

@@ -114,7 +114,7 @@ export default function About() {
         <div className="grid md:grid-cols-2 gap-8">
           {[
             { title: 'Location', details: 'Cryptography Research Lab, IIIT Delhi, Okhla Industrial Estate, Phase III, New Delhi, India' },
-            { title: 'Get in Touch', details: 'Email: crypto@iiitd.ac.in\nPhone: +91-11-2690-7400\nOffice Hours: Monday-Friday, 9:00 AM - 5:00 PM' }
+            { title: 'Get in Touch', details: 'Email: Under-Development\nPhone: Under-Development\nOffice Hours: Under-Development' }
           ].map((contact, index) => (
             <motion.div 
               key={contact.title}

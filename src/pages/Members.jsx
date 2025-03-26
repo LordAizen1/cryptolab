@@ -1,54 +1,13 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from "framer-motion";
-import { Mail, Github, Linkedin, BookOpen } from 'lucide-react';
-
-const members = [
-  {
-    id: 1,
-    name: 'Dr. Ravi Anand',
-    role: 'Assistant Professor (CSE)',
-    specialization: 'Cryptography - Classical and Quantum/ Quantum Computing/ Cryptanalysis',
-    image: 'https://www.iiitd.ac.in/sites/default/files/ravianand.jpg',
-    // publications: 45,
-    email: 'sravi.anand@iiitd.ac.in',
-    // github: 'sjohnson',
-    linkedin: 'ravi-anand',
-    isHead: true,
-  },
-  {
-    id: 2,
-    name: 'Md Kaif',
-    role: 'Student',
-    specialization: 'Crytography',
-    image: 'https://media.tenor.com/HmFcGkSu58QAAAAM/silly.gif',
-    // publications: 0,
-    email: 'kaif22289@iiitd.ac.in',
-    github: 'lordaizen1',
-    linkedin: 'mohammadkaif007',
-  },
-  {
-    id: 3,
-    name: 'Mohd Areeb Ansari',
-    role: 'Student',
-    specialization: 'Cryptography',
-    image: 'https://media.tenor.com/aE2kxahQBz8AAAAe/ohh.png',
-    // publications: 0,
-    email: 'areeb22297@iiitd.ac.in',
-    github: 'areeb22297',
-    linkedin: 'mohammad-areeb-ansari-04b446318',
-  },
-];
-
-const cardVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 }
-};
+import { Mail, Github, Linkedin } from 'lucide-react';
+import { firestore } from '../firebase';
+import { collection, getDocs } from 'firebase/firestore';
 
 const MemberCard = ({ member, index, isHead }) => (
   <motion.div
-    variants={cardVariants}
-    initial="hidden"
-    animate="visible"
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.2, delay: index * 0.1 }}
     className={`bg-[#23262d] rounded-lg overflow-hidden border border-[rgb(136,58,234)] hover:border-[rgb(224,204,250)] transition-all duration-300 ${
       isHead ? 'md:max-w-2xl mx-auto' : ''
@@ -72,47 +31,67 @@ const MemberCard = ({ member, index, isHead }) => (
         </div>
       </div>
 
-      {/* <div className="mt-4 flex items-center space-x-4 justify-center md:justify-start">
-        <div className="flex items-center text-white">
-          <BookOpen className="h-5 w-5 mr-2 text-[rgb(136,58,234)]" />
-          <span>{member.publications} Publications</span>
-        </div>
-      </div> */}
-
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: index * 0.1 + 0.4 }}
         className="mt-4 flex space-x-4 justify-center md:justify-start"
       >
-        <a
-          href={`mailto:${member.email}`}
-          className="text-white hover:text-[rgb(224,204,250)] transition-colors duration-300"
-        >
-          <Mail className="h-5 w-5" />
-        </a>
-        <a
-          href={`https://github.com/${member.github}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-white hover:text-[rgb(224,204,250)] transition-colors duration-300"
-        >
-          <Github className="h-5 w-5" />
-        </a>
-        <a
-          href={`https://linkedin.com/in/${member.linkedin}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-white hover:text-[rgb(224,204,250)] transition-colors duration-300"
-        >
-          <Linkedin className="h-5 w-5" />
-        </a>
+        {member.email && (
+          <a
+            href={`mailto:${member.email}`}
+            className="text-white hover:text-[rgb(224,204,250)] transition-colors duration-300"
+          >
+            <Mail className="h-5 w-5" />
+          </a>
+        )}
+        {member.github && (
+          <a
+            href={`https://github.com/${member.github}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-white hover:text-[rgb(224,204,250)] transition-colors duration-300"
+          >
+            <Github className="h-5 w-5" />
+          </a>
+        )}
+        {member.linkedin && (
+          <a
+            href={`https://linkedin.com/in/${member.linkedin}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-white hover:text-[rgb(224,204,250)] transition-colors duration-300"
+          >
+            <Linkedin className="h-5 w-5" />
+          </a>
+        )}
       </motion.div>
     </div>
   </motion.div>
 );
 
 export default function Members() {
+  const [members, setMembers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMembers = async () => {
+      const querySnapshot = await getDocs(collection(firestore, 'members'));
+      const membersList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setMembers(membersList);
+      setLoading(false);
+    };
+    fetchMembers();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-white">Loading members...</div>
+      </div>
+    );
+  }
+
   const headMember = members.find(m => m.isHead);
   const otherMembers = members.filter(m => !m.isHead);
 
@@ -137,9 +116,11 @@ export default function Members() {
         </motion.div>
 
         {/* Head Faculty Member */}
-        <div className="px-4">
-          <MemberCard member={headMember} index={0} isHead={true} />
-        </div>
+        {headMember && (
+          <div className="px-4">
+            <MemberCard member={headMember} index={0} isHead={true} />
+          </div>
+        )}
 
         {/* Other Members */}
         <div className="grid gap-8 md:grid-cols-2 px-4">

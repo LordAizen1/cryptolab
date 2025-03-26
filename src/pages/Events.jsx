@@ -1,44 +1,31 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from "framer-motion";
 import { Calendar, MapPin, Clock, Users } from 'lucide-react';
-
-const events = [
-  {
-    id: 1,
-    title: 'Cryptography Workshop',
-    date: 'March 15, 2024',
-    time: '10:00 AM - 4:00 PM',
-    location: 'IIIT Delhi Campus',
-    description: 'Hands-on workshop covering practical aspects of modern cryptography.',
-    image: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&q=80&w=1000',
-    capacity: 50,
-    registered: 35,
-  },
-  {
-    id: 2,
-    title: 'Cryptanalysis Symposium',
-    date: 'April 2, 2024',
-    time: '9:00 AM - 5:00 PM',
-    location: 'Virtual Event',
-    description: 'International symposium on recent advances in cryptanalysis.',
-    image: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&q=80&w=1000',
-    capacity: 200,
-    registered: 145,
-  },
-  {
-    id: 3,
-    title: 'Security Conference 2024',
-    date: 'May 20, 2024',
-    time: '10:00 AM - 6:00 PM',
-    location: 'Convention Center',
-    description: 'Annual conference on cybersecurity and cryptography.',
-    image: 'https://images.unsplash.com/photo-1515187029135-18ee286d815b?auto=format&fit=crop&q=80&w=1000',
-    capacity: 300,
-    registered: 210,
-  },
-];
+import { firestore } from '../firebase';
+import { collection, getDocs } from 'firebase/firestore';
 
 export default function Events() {
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      const querySnapshot = await getDocs(collection(firestore, 'events'));
+      const eventsList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setEvents(eventsList);
+      setLoading(false);
+    };
+    fetchEvents();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-white">Loading events...</div>
+      </div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -102,7 +89,7 @@ export default function Events() {
                   </div>
                   <div className="flex items-center text-white">
                     <Users className="h-5 w-5 mr-2 text-[rgb(136,58,234)]" />
-                    <span>{event.registered}/{event.capacity} Registered</span>
+                    <span>{event.registered || 0}/{event.capacity || 0} Registered</span>
                   </div>
                 </div>
 
