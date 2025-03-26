@@ -23,9 +23,9 @@ dist-ssr
 *.sln
 *.sw?
 
-# Environment variables
-.env
+# # Environment variables
+# .env
 
-# Local environment files
-.env.local
-.env.*.local
+# # Local environment files
+# .env.local
+# .env.*.local
