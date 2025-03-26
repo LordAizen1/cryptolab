@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   BookOpen, 
   Calendar, 
@@ -11,25 +11,9 @@ import {
   FlaskRound as Flask,
   Menu,
   X,
-  ArrowUp // Import the ArrowUp icon for the scroll-to-top button
+  ArrowUp,
+  Shield // Added Shield icon for admin button
 } from 'lucide-react';
-import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, runTransaction } from 'firebase/database';
-
-// Firebase configuration
-const firebaseConfig = {
-  apiKey: "AlzaSyCpqT3WboqvQ0wTR3CwyyPGw99qqo0Bmqw",
-  authDomain: "cryptoportal-d7454.firebaseapp.com",
-  databaseURL: "https://cryptoportal-d7454-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "cryptoportal-d7454",
-  storageBucket: "cryptoportal-d7454.appspot.com",
-  messagingSenderId: "664502013777",
-  appId: "1:664502013777:web:e943bc538a2ef050b6cd70", // Replace with your actual appId
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
 
 const navigation = [
   { name: 'Home', href: '/', icon: Home },
@@ -44,12 +28,11 @@ const navigation = [
 
 export default function Layout({ children }) {
   const location = useLocation();
+  const navigate = useNavigate(); // Added useNavigate for admin button
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const mobileMenuRef = useRef(null);
   const [indicatorStyle, setIndicatorStyle] = useState({});
   const navRefs = useRef({});
-  const [visitorCount, setVisitorCount] = useState(0);
-  const hasIncremented = useRef(false); // Flag to track if the count has been incremented
 
   // State for scroll-to-top button visibility
   const [showScrollToTop, setShowScrollToTop] = useState(false);
@@ -65,8 +48,6 @@ export default function Layout({ children }) {
     };
 
     window.addEventListener('scroll', handleScroll);
-
-    // Cleanup the event listener on component unmount
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
@@ -76,42 +57,14 @@ export default function Layout({ children }) {
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
-      behavior: 'smooth', // Smooth scroll
+      behavior: 'smooth',
     });
   };
 
-  // Visitor count logic (unchanged)
-  useEffect(() => {
-    if (!hasIncremented.current) { // Only run if the count hasn't been incremented yet
-      const visitorRef = ref(db, 'visitors/count');
-
-      console.log('Incrementing visitor count...'); // Debug log
-
-      // Use a transaction to increment the count
-      runTransaction(visitorRef, (currentCount) => {
-        if (currentCount === null) {
-          // If the count doesn't exist, initialize it to 1
-          return 1;
-        }
-        // Increment the count
-        return currentCount + 1;
-      })
-        .then((result) => {
-          console.log('Visitor count updated:', result.snapshot.val()); // Debug log
-          // Set the visitor count in the state
-          setVisitorCount(result.snapshot.val());
-          hasIncremented.current = true; // Mark as incremented
-        })
-        .catch((error) => {
-          console.error('Error updating visitor count:', error);
-        });
-    }
-
-    // Cleanup function to reset the flag if the component unmounts
-    return () => {
-      hasIncremented.current = false;
-    };
-  }, []); // Empty dependency array ensures this runs only once
+  // Handle admin login button click
+  const handleAdminLoginClick = () => {
+    navigate('/admin-login');
+  };
 
   // Update indicator position when location changes
   useEffect(() => {
@@ -170,6 +123,15 @@ export default function Layout({ children }) {
                   );
                 })}
               </div>
+
+              {/* Admin Login Button - Added this section */}
+              <button
+                onClick={handleAdminLoginClick}
+                className="ml-4 bg-[rgb(136,58,234)] text-white py-2 px-4 rounded-md hover:bg-[rgb(49,10,101)] transition-colors duration-300 flex items-center"
+                aria-label="Admin login"
+              >
+                <Shield className="h-5 w-5" />
+              </button>
             </div>
 
             {/* Mobile menu button */}
@@ -208,6 +170,14 @@ export default function Layout({ children }) {
                           );
                         })}
                       </div>
+                      {/* Added Admin Button to mobile menu */}
+                      <button
+                        onClick={handleAdminLoginClick}
+                        className="w-full flex items-center justify-center p-3 rounded-md text-sm font-medium text-white hover:bg-[rgb(49,10,101)] hover:text-[rgb(224,204,250)] mt-2"
+                      >
+                        <Shield className="h-5 w-5 mr-2" />
+                        <span className="text-xs">Admin</span>
+                      </button>
                     </div>
                   </div>
                 )}
@@ -261,9 +231,6 @@ export default function Layout({ children }) {
                 IIIT Delhi<br />
                 Okhla Industrial Estate, Phase III<br />
                 New Delhi, India
-              </p>
-              <p className="text-white mt-4">
-                Visitors: {visitorCount}
               </p>
             </div>
           </div>
