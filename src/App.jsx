@@ -3,7 +3,7 @@ import { HashRouter as Router, Routes, Route, Navigate } from "react-router-dom"
 import Layout from "./components/Layout";
 import Home from "./pages/Home";
 import Courses from "./pages/Courses";
-import CourseDetails from "./pages/CourseDetails";
+// import CourseDetails from "./pages/CourseDetails";
 import Events from "./pages/Events";
 import Resources from "./pages/Resources";
 import Members from "./pages/Members";
@@ -32,7 +32,7 @@ function App() {
           {/* Main routes */}
           <Route path="/" element={<Home />} />
           <Route path="/courses" element={<Courses />} />
-          <Route path="/courses/:courseId" element={<CourseDetails />} />
+          {/* <Route path="/courses/:courseId" element={<CourseDetails />} /> */}
           <Route path="/resources" element={<Resources />} />
           <Route path="/events" element={<Events />} />
           <Route path="/members" element={<Members />} />
