@@ -11,13 +11,16 @@ export default function AdminEvents() {
   const [editingEvent, setEditingEvent] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
-    date: '',
+    startDate: '',
+    endDate: '',
     time: '',
     location: '',
     description: '',
     image: '',
     capacity: 0,
-    registered: 0
+    registered: 0,
+    eventLink: '',
+    gallery: []
   });
 
   const { user } = useAuth();
@@ -37,15 +40,31 @@ export default function AdminEvents() {
     setFormData({ ...formData, [name]: value });
   };
 
+  const handleGalleryChange = (e) => {
+    const { value } = e.target;
+    setFormData({ 
+      ...formData, 
+      gallery: value.split(',').map(url => url.trim()) 
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Format the date display for single day or multi-day events
+      const eventData = {
+        ...formData,
+        date: formData.startDate === formData.endDate || !formData.endDate
+          ? formData.startDate
+          : `${formData.startDate} to ${formData.endDate}`
+      };
+
       if (editingEvent?.id) {
-        await updateDoc(doc(firestore, 'events', editingEvent.id), formData);
-        setEvents(events.map(event => event.id === editingEvent.id ? { ...event, ...formData } : event));
+        await updateDoc(doc(firestore, 'events', editingEvent.id), eventData);
+        setEvents(events.map(event => event.id === editingEvent.id ? { ...event, ...eventData } : event));
       } else {
-        const docRef = await addDoc(collection(firestore, 'events'), formData);
-        setEvents([...events, { id: docRef.id, ...formData }]);
+        const docRef = await addDoc(collection(firestore, 'events'), eventData);
+        setEvents([...events, { id: docRef.id, ...eventData }]);
       }
       setEditingEvent(null);
       resetForm();
@@ -57,13 +76,16 @@ export default function AdminEvents() {
   const resetForm = () => {
     setFormData({
       title: '',
-      date: '',
+      startDate: '',
+      endDate: '',
       time: '',
       location: '',
       description: '',
       image: '',
       capacity: 0,
-      registered: 0
+      registered: 0,
+      eventLink: '',
+      gallery: []
     });
   };
 
@@ -117,9 +139,11 @@ export default function AdminEvents() {
                   <div className="flex items-center text-white">
                     <span>{event.date}</span>
                   </div>
-                  <div className="flex items-center text-white">
-                    <span>{event.time}</span>
-                  </div>
+                  {event.time && (
+                    <div className="flex items-center text-white">
+                      <span>{event.time}</span>
+                    </div>
+                  )}
                   <div className="flex items-center text-white">
                     <span>{event.location}</span>
                   </div>
@@ -133,7 +157,15 @@ export default function AdminEvents() {
                     <button
                       onClick={() => {
                         setEditingEvent(event);
-                        setFormData(event);
+                        // If date contains "to", split it into start and end dates
+                        const dateParts = event.date?.includes(' to ') 
+                          ? event.date.split(' to ') 
+                          : [event.date, event.date];
+                        setFormData({
+                          ...event,
+                          startDate: dateParts[0],
+                          endDate: dateParts[1]
+                        });
                       }}
                       className="text-[rgb(136,58,234)] hover:text-[rgb(224,204,250)] transition-colors duration-300"
                     >
@@ -175,24 +207,40 @@ export default function AdminEvents() {
                 rows="4"
                 className="w-full bg-[#13151a] text-white rounded-md px-4 py-2 border border-[rgb(136,58,234)]" 
               />
-              <div className="grid grid-cols-2 gap-4">
-                <input 
-                  name="date" 
-                  type="date" 
-                  value={formData.date} 
-                  onChange={handleChange} 
-                  required 
-                  className="w-full bg-[#13151a] text-white rounded-md px-4 py-2 border border-[rgb(136,58,234)]" 
-                />
-                <input 
-                  name="time" 
-                  placeholder="Time (e.g., 10:00 AM - 4:00 PM)" 
-                  value={formData.time} 
-                  onChange={handleChange} 
-                  required 
-                  className="w-full bg-[#13151a] text-white rounded-md px-4 py-2 border border-[rgb(136,58,234)]" 
-                />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-white block mb-1">Start Date</label>
+                  <input 
+                    name="startDate" 
+                    type="date" 
+                    value={formData.startDate} 
+                    onChange={handleChange} 
+                    required 
+                    className="w-full bg-[#13151a] text-white rounded-md px-4 py-2 border border-[rgb(136,58,234)]" 
+                  />
+                </div>
+                <div>
+                  <label className="text-white block mb-1">End Date (optional)</label>
+                  <input 
+                    name="endDate" 
+                    type="date" 
+                    value={formData.endDate} 
+                    onChange={handleChange} 
+                    min={formData.startDate}
+                    className="w-full bg-[#13151a] text-white rounded-md px-4 py-2 border border-[rgb(136,58,234)]" 
+                  />
+                </div>
               </div>
+
+              <input 
+                name="time" 
+                placeholder="Time (optional, e.g., 10:00 AM - 4:00 PM)" 
+                value={formData.time} 
+                onChange={handleChange} 
+                className="w-full bg-[#13151a] text-white rounded-md px-4 py-2 border border-[rgb(136,58,234)]" 
+              />
+              
               <input 
                 name="location" 
                 placeholder="Location" 
@@ -201,6 +249,7 @@ export default function AdminEvents() {
                 required 
                 className="w-full bg-[#13151a] text-white rounded-md px-4 py-2 border border-[rgb(136,58,234)]" 
               />
+              
               <input 
                 name="image" 
                 placeholder="Image URL" 
@@ -209,23 +258,53 @@ export default function AdminEvents() {
                 required 
                 className="w-full bg-[#13151a] text-white rounded-md px-4 py-2 border border-[rgb(136,58,234)]" 
               />
+              
+              <input 
+                name="eventLink" 
+                placeholder="Event Website URL" 
+                value={formData.eventLink} 
+                onChange={handleChange} 
+                className="w-full bg-[#13151a] text-white rounded-md px-4 py-2 border border-[rgb(136,58,234)]" 
+              />
+              
               <div className="grid grid-cols-2 gap-4">
-                <input 
-                  name="capacity" 
-                  type="number" 
-                  placeholder="Capacity" 
-                  value={formData.capacity} 
-                  onChange={handleChange} 
-                  required 
+                <div>
+                  <label className="text-white block mb-1">Capacity</label>
+                  <input 
+                    name="capacity" 
+                    type="number" 
+                    placeholder="Capacity" 
+                    value={formData.capacity} 
+                    onChange={handleChange} 
+                    required 
+                    min="0"
+                    className="w-full bg-[#13151a] text-white rounded-md px-4 py-2 border border-[rgb(136,58,234)]" 
+                  />
+                </div>
+                <div>
+                  <label className="text-white block mb-1">Registered</label>
+                  <input 
+                    name="registered" 
+                    type="number" 
+                    placeholder="Registered" 
+                    value={formData.registered} 
+                    onChange={handleChange} 
+                    min="0"
+                    max={formData.capacity}
+                    className="w-full bg-[#13151a] text-white rounded-md px-4 py-2 border border-[rgb(136,58,234)]" 
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="text-white block mb-1">Gallery Image URLs (comma separated)</label>
+                <textarea
+                  name="gallery" 
+                  placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
+                  value={(formData.gallery || []).join(', ')} 
+                  onChange={handleGalleryChange} 
                   className="w-full bg-[#13151a] text-white rounded-md px-4 py-2 border border-[rgb(136,58,234)]" 
-                />
-                <input 
-                  name="registered" 
-                  type="number" 
-                  placeholder="Registered" 
-                  value={formData.registered} 
-                  onChange={handleChange} 
-                  className="w-full bg-[#13151a] text-white rounded-md px-4 py-2 border border-[rgb(136,58,234)]" 
+                  rows="2"
                 />
               </div>
 
