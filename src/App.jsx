@@ -11,14 +11,18 @@ import About from "./pages/About";
 import Blog from "./pages/Blogs";
 import Labs from "./pages/Labs";
 import ScrollToTop from "./components/ScrollToTop";
+
 import AdminLogin from "./components/admin/AdminLogin";
-import Admin from "./components/admin/Admin";
+import Admin from "./components/admin/AdminDashboard";
+import AdminHome from "./components/admin/AdminHome";
 import AdminCourses from "./components/admin/AdminCourses";
 import AdminResources from "./components/admin/AdminResources";
 import AdminLabs from "./components/admin/AdminLabs";
 import AdminEvents from "./components/admin/AdminEvents";
 import AdminMembers from "./components/admin/AdminMembers";
 import AdminBlogs from "./components/admin/AdminBlogs";
+import AdminAbout from "./components/admin/AdminAbout";
+
 import { useAuth } from "./context/AuthContext";
 
 function App() {
@@ -47,6 +51,10 @@ function App() {
             element={user ? <Admin /> : <Navigate to="/admin-login" />}
           />
           <Route
+            path="/admin/home"
+            element={user ? <AdminHome /> : <Navigate to="/admin-login" />}
+          />
+          <Route
             path="/admin/courses"
             element={user ? <AdminCourses /> : <Navigate to="/admin-login" />}
           />
@@ -69,6 +77,10 @@ function App() {
           <Route
             path="/admin/blogs"
             element={user ? <AdminBlogs /> : <Navigate to="/admin-login" />}
+          />
+          <Route
+            path="/admin/about"
+            element={user ? <AdminAbout /> : <Navigate to="/admin-login" />}
           />
         </Routes>
       </Layout>
