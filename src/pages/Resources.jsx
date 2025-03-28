@@ -276,7 +276,7 @@ export default function Resources() {
         </motion.p>
       </div>
 
-      <div className="flex space-x-2 border-b border-[rgb(49,10,101)]">
+      <div className="flex space-x-2 border-b border-[rgb(49,10,101)] overflow-x-auto pb-2">
         {tabs.map((tab) => (
           <motion.button
             key={tab.id}
@@ -290,7 +290,8 @@ export default function Resources() {
             }`}
           >
             <tab.icon className="h-5 w-5" />
-            <span>{tab.label}</span>
+            {/* Hide text on mobile, show on medium screens and up */}
+            <span className="hidden md:inline">{tab.label}</span>
           </motion.button>
         ))}
       </div>
