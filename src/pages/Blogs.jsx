@@ -1,8 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from "framer-motion";
-import { Calendar, User, Plus, LogIn, LogOut, Edit, ChevronRight, X } from 'lucide-react';
+import { Calendar, User, Plus, LogIn, LogOut, Edit, ChevronRight, X, Clock } from 'lucide-react';
 import { firestore } from '../firebase';
-import { collection, getDocs, addDoc, serverTimestamp, doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { 
+  collection, 
+  addDoc, 
+  serverTimestamp, 
+  doc, 
+  getDoc, 
+  updateDoc, 
+  deleteDoc,
+  query,
+  where,
+  orderBy,
+  onSnapshot
+} from 'firebase/firestore';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 
 // Error Boundary Component
@@ -34,6 +46,7 @@ class ErrorBoundary extends React.Component {
 
 export default function Blog() {
   const [blogs, setBlogs] = useState([]);
+  const [userPosts, setUserPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -62,36 +75,77 @@ export default function Blog() {
     }
   };
 
-  // Fetch blogs and auth state
   useEffect(() => {
     const auth = getAuth();
-    
+    let unsubscribeBlogs = () => {};
+    let unsubscribeUserPosts = () => {};
+  
     const fetchBlogs = async () => {
       try {
-        const querySnapshot = await getDocs(collection(firestore, 'blogs'));
-        const blogsList = querySnapshot.docs.map(doc => ({ 
-          id: doc.id, 
-          ...doc.data(),
-          date: doc.data().date || serverTimestamp()
-        }));
-        setBlogs(blogsList);
+        // Query only approved blogs for public view
+        const approvedQuery = query(
+          collection(firestore, 'blogs'),
+          where('approved', '==', true),
+          orderBy('date', 'desc')
+        );
+        
+        unsubscribeBlogs = onSnapshot(approvedQuery, 
+          (snapshot) => {
+            setBlogs(snapshot.docs.map(doc => ({ 
+              id: doc.id, 
+              ...doc.data(),
+              date: doc.data().date || serverTimestamp()
+            }))); // Fixed missing parenthesis
+            setLoading(false);
+          }, 
+          (error) => {
+            console.error("Error in blogs snapshot:", error);
+            setLoading(false);
+          }
+        );
+  
       } catch (error) {
-        console.error("Error fetching blogs:", error);
-      } finally {
+        console.error("Error setting up blogs query:", error);
         setLoading(false);
       }
     };
-
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+  
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       if (user && user.email.endsWith("@iiitd.ac.in")) {
         setUser(user);
+        
+        // Set up listener for user's own posts (both approved and pending)
+        const userPostsQuery = query(
+          collection(firestore, 'blogs'),
+          where('authorId', '==', user.uid),
+          orderBy('date', 'desc')
+        );
+        
+        unsubscribeUserPosts = onSnapshot(userPostsQuery, 
+          (snapshot) => {
+            setUserPosts(snapshot.docs.map(doc => ({ 
+              id: doc.id, 
+              ...doc.data(),
+              date: doc.data().date || serverTimestamp()
+            }))); 
+          }, 
+          (error) => {
+            console.error("Error in user posts snapshot:", error);
+          }
+        );
       } else {
         setUser(null);
+        setUserPosts([]);
       }
     });
-
+  
     fetchBlogs();
-    return unsubscribe;
+    
+    return () => {
+      unsubscribeAuth();
+      unsubscribeBlogs();
+      unsubscribeUserPosts();
+    };
   }, []);
 
   const handleGoogleSignIn = async () => {
@@ -119,21 +173,19 @@ export default function Blog() {
         });
         setEditingBlog(null);
       } else {
-        // Create new blog
+        // Create new blog (initially unapproved)
         await addDoc(collection(firestore, "blogs"), {
           ...newBlog,
           author: user.displayName || user.email.split("@")[0],
           authorId: user.uid,
           date: serverTimestamp(),
-          tags: newBlog.tags.filter(tag => tag.trim() !== "")
+          tags: newBlog.tags.filter(tag => tag.trim() !== ""),
+          approved: false
         });
       }
       
       setShowForm(false);
       setNewBlog({ title: "", content: "", tags: [], image: "" });
-      // Refresh blogs
-      const querySnapshot = await getDocs(collection(firestore, 'blogs'));
-      setBlogs(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     } catch (error) {
       console.error("Error submitting blog:", error);
     }
@@ -162,9 +214,6 @@ export default function Blog() {
     if (window.confirm("Are you sure you want to delete this blog post?")) {
       try {
         await deleteDoc(doc(firestore, 'blogs', blogId));
-        // Refresh blogs
-        const querySnapshot = await getDocs(collection(firestore, 'blogs'));
-        setBlogs(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
         if (selectedBlog?.id === blogId) {
           setSelectedBlog(null);
         }
@@ -214,6 +263,12 @@ export default function Blog() {
                     <Calendar className="h-5 w-5 mr-2" />
                     {formatDate(selectedBlog.date)}
                   </div>
+                  {!selectedBlog.approved && (
+                    <div className="flex items-center text-yellow-400">
+                      <Clock className="h-5 w-5 mr-2" />
+                      <span>Pending Approval</span>
+                    </div>
+                  )}
                 </div>
               </div>
               {user?.uid === selectedBlog.authorId && (
@@ -290,6 +345,18 @@ export default function Blog() {
             Latest insights, research, and developments in cryptography.
           </motion.p>
         </div>
+
+        {/* Pending posts notification */}
+        {user && userPosts.some(post => !post.approved) && (
+          <div className="bg-yellow-900/30 border border-yellow-600 text-yellow-200 p-4 rounded-lg">
+            <div className="flex items-center">
+              <Clock className="h-5 w-5 mr-2" />
+              <span>
+                You have {userPosts.filter(post => !post.approved).length} post(s) waiting for admin approval
+              </span>
+            </div>
+          </div>
+        )}
 
         <div className="flex justify-end mb-8 gap-4">
           {user ? (
@@ -371,6 +438,11 @@ export default function Blog() {
                   onChange={(e) => setNewBlog({...newBlog, image: e.target.value})}
                   className="w-full p-3 bg-[#2b2e36] border border-[rgb(136,58,234)] rounded text-white"
                 />
+                {!editingBlog && (
+                  <div className="bg-blue-900/20 border border-blue-500 text-blue-200 p-3 rounded text-sm">
+                    Your post will be submitted for admin approval before being published.
+                  </div>
+                )}
                 <div className="flex justify-end gap-3">
                   <button
                     onClick={() => {
@@ -385,7 +457,7 @@ export default function Blog() {
                     onClick={handleSubmit}
                     className="px-4 py-2 bg-[rgb(136,58,234)] hover:bg-[rgb(49,10,101)] text-white rounded transition-colors"
                   >
-                    {editingBlog ? "Update" : "Publish"}
+                    {editingBlog ? "Update" : "Submit for Approval"}
                   </button>
                   {editingBlog && (
                     <button
@@ -402,76 +474,163 @@ export default function Blog() {
         )}
 
         <div className="grid gap-8">
-          {blogs.map((blog, index) => (
-            <motion.div
-              key={blog.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: index * 0.2 }}
-              whileHover={{ scale: 1.02 }}
-              className="bg-[#23262d] rounded-lg overflow-hidden border border-[rgb(136,58,234)] hover:border-[rgb(224,204,250)] transition-all duration-300 cursor-pointer"
-              onClick={() => handleViewBlog(blog.id)}
-            >
-              <div className="md:flex">
-                {blog.image && (
-                  <div className="md:w-1/3">
-                    <img
-                      src={blog.image}
-                      alt={blog.title}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                )}
-                <div className={`p-6 ${blog.image ? 'md:w-2/3' : 'w-full'}`}>
-                  <div className="flex justify-between items-start">
-                    <h2 className="text-2xl font-bold text-white mb-2">{blog.title}</h2>
-                    {user?.uid === blog.authorId && (
-                      <button 
-                        className="text-[rgb(136,58,234)] hover:text-[rgb(224,204,250)] transition-colors"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditBlog(blog);
-                        }}
-                      >
-                        <Edit className="h-5 w-5" />
-                      </button>
-                    )}
-                  </div>
-                  <p className="text-[rgb(224,204,250)] mb-4">
-                    {blog.content.substring(0, 200)}{blog.content.length > 200 ? "..." : ""}
-                  </p>
-                  
-                  {blog.tags && blog.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {blog.tags.map((tag, i) => (
-                        <motion.span
-                          key={i}
-                          whileHover={{ scale: 1.1 }}
-                          className="bg-[rgb(49,10,101)] text-[rgb(224,204,250)] px-2 py-1 rounded-md text-sm"
-                        >
-                          {tag}
-                        </motion.span>
-                      ))}
+          {blogs.length > 0 ? (
+            blogs.map((blog, index) => (
+              <motion.div
+                key={blog.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.2 }}
+                whileHover={{ scale: 1.02 }}
+                className="bg-[#23262d] rounded-lg overflow-hidden border border-[rgb(136,58,234)] hover:border-[rgb(224,204,250)] transition-all duration-300 cursor-pointer"
+                onClick={() => handleViewBlog(blog.id)}
+              >
+                <div className="md:flex">
+                  {blog.image && (
+                    <div className="md:w-1/3">
+                      <img
+                        src={blog.image}
+                        alt={blog.title}
+                        className="h-full w-full object-cover"
+                      />
                     </div>
                   )}
-
-                  <div className="flex items-center justify-between text-[rgb(224,204,250)]">
-                    <div className="flex items-center space-x-4">
-                      <div className="flex items-center">
-                        <User className="h-4 w-4 mr-2" />
-                        {blog.author || "Anonymous"}
+                  <div className={`p-6 ${blog.image ? 'md:w-2/3' : 'w-full'}`}>
+                    <div className="flex justify-between items-start">
+                      <h2 className="text-2xl font-bold text-white mb-2">{blog.title}</h2>
+                      {user?.uid === blog.authorId && (
+                        <button 
+                          className="text-[rgb(136,58,234)] hover:text-[rgb(224,204,250)] transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditBlog(blog);
+                          }}
+                        >
+                          <Edit className="h-5 w-5" />
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[rgb(224,204,250)] mb-4">
+                      {blog.content.substring(0, 200)}{blog.content.length > 200 ? "..." : ""}
+                    </p>
+                    
+                    {blog.tags && blog.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {blog.tags.map((tag, i) => (
+                          <motion.span
+                            key={i}
+                            whileHover={{ scale: 1.1 }}
+                            className="bg-[rgb(49,10,101)] text-[rgb(224,204,250)] px-2 py-1 rounded-md text-sm"
+                          >
+                            {tag}
+                          </motion.span>
+                        ))}
                       </div>
-                      <div className="flex items-center">
-                        <Calendar className="h-4 w-4 mr-2" />
-                        {formatDate(blog.date)}
+                    )}
+
+                    <div className="flex items-center justify-between text-[rgb(224,204,250)]">
+                      <div className="flex items-center space-x-4">
+                        <div className="flex items-center">
+                          <User className="h-4 w-4 mr-2" />
+                          {blog.author || "Anonymous"}
+                        </div>
+                        <div className="flex items-center">
+                          <Calendar className="h-4 w-4 mr-2" />
+                          {formatDate(blog.date)}
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            ))
+          ) : (
+            <p className="text-white text-center py-8">
+              {loading ? "Loading blogs..." : "No approved blog posts found"}
+            </p>
+          )}
         </div>
+
+        {/* Show user's pending posts in a separate section */}
+        {user && userPosts.some(post => !post.approved) && (
+          <div className="mt-12">
+            <h2 className="text-2xl font-bold text-white mb-6 border-b border-yellow-600 pb-2">
+              Your Pending Posts
+            </h2>
+            <div className="grid gap-8">
+              {userPosts
+                .filter(post => !post.approved)
+                .map((blog, index) => (
+                  <motion.div
+                    key={blog.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: index * 0.1 }}
+                    whileHover={{ scale: 1.02 }}
+                    className="bg-[#23262d] rounded-lg overflow-hidden border border-yellow-600 hover:border-yellow-400 transition-all duration-300 cursor-pointer"
+                    onClick={() => handleViewBlog(blog.id)}
+                  >
+                    <div className="md:flex">
+                      {blog.image && (
+                        <div className="md:w-1/3">
+                          <img
+                            src={blog.image}
+                            alt={blog.title}
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                      )}
+                      <div className={`p-6 ${blog.image ? 'md:w-2/3' : 'w-full'}`}>
+                        <div className="flex justify-between items-start">
+                          <h2 className="text-2xl font-bold text-white mb-2">{blog.title}</h2>
+                          <div className="flex space-x-2">
+                            <button 
+                              className="text-[rgb(136,58,234)] hover:text-[rgb(224,204,250)] transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditBlog(blog);
+                              }}
+                            >
+                              <Edit className="h-5 w-5" />
+                            </button>
+                            <button 
+                              className="text-red-500 hover:text-red-400 transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteBlog(blog.id);
+                              }}
+                            >
+                              <X className="h-5 w-5" />
+                            </button>
+                          </div>
+                        </div>
+                        <div className="flex items-center mb-4 text-yellow-400">
+                          <Clock className="h-4 w-4 mr-2" />
+                          <span>Pending Admin Approval</span>
+                        </div>
+                        <p className="text-[rgb(224,204,250)] mb-4">
+                          {blog.content.substring(0, 200)}{blog.content.length > 200 ? "..." : ""}
+                        </p>
+                        {blog.tags && blog.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {blog.tags.map((tag, i) => (
+                              <motion.span
+                                key={i}
+                                whileHover={{ scale: 1.1 }}
+                                className="bg-[rgb(49,10,101)] text-[rgb(224,204,250)] px-2 py-1 rounded-md text-sm"
+                              >
+                                {tag}
+                              </motion.span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+            </div>
+          </div>
+        )}
       </motion.div>
     </ErrorBoundary>
   );

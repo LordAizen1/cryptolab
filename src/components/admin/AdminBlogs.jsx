@@ -1,24 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from "framer-motion";
-import { Calendar, User, Edit, Trash2, ChevronRight, ArrowLeft } from 'lucide-react';
+import { Calendar, User, Edit, Trash2, ChevronRight, ArrowLeft, Check, X } from 'lucide-react';
 import { firestore } from '../../firebase';
-import { collection, getDocs, doc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, deleteDoc, updateDoc, query, where, orderBy } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 
 export default function AdminBlogs() {
-  const [blogs, setBlogs] = useState([]);
+  const [blogs, setBlogs] = useState({ pending: [], approved: [] });
   const [loading, setLoading] = useState(true);
   const [selectedBlog, setSelectedBlog] = useState(null);
   const navigate = useNavigate();
 
-  // Format date safely
   const formatDate = (date) => {
     if (!date) return "N/A";
     try {
       if (typeof date.toDate === 'function') {
         return date.toDate().toLocaleDateString();
       }
-      if (date.seconds) { // Handle Firestore Timestamp
+      if (date.seconds) {
         return new Date(date.seconds * 1000).toLocaleDateString();
       }
       if (typeof date === 'string') {
@@ -33,12 +32,28 @@ export default function AdminBlogs() {
   useEffect(() => {
     const fetchBlogs = async () => {
       try {
-        const querySnapshot = await getDocs(collection(firestore, 'blogs'));
-        const blogsList = querySnapshot.docs.map(doc => ({ 
-          id: doc.id, 
-          ...doc.data()
-        }));
-        setBlogs(blogsList);
+        const [pendingQuery, approvedQuery] = [
+          query(
+            collection(firestore, 'blogs'),
+            where('approved', '==', false),
+            orderBy('date', 'desc')
+          ),
+          query(
+            collection(firestore, 'blogs'),
+            where('approved', '==', true),
+            orderBy('date', 'desc')
+          )
+        ];
+
+        const [pendingSnap, approvedSnap] = await Promise.all([
+          getDocs(pendingQuery),
+          getDocs(approvedQuery)
+        ]);
+
+        setBlogs({
+          pending: pendingSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+          approved: approvedSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        });
       } catch (error) {
         console.error("Error fetching blogs:", error);
       } finally {
@@ -49,11 +64,26 @@ export default function AdminBlogs() {
     fetchBlogs();
   }, []);
 
-  const handleDeleteBlog = async (blogId) => {
+  const handleApproveBlog = async (blogId) => {
+    try {
+      await updateDoc(doc(firestore, 'blogs', blogId), { approved: true });
+      setBlogs(prev => ({
+        pending: prev.pending.filter(blog => blog.id !== blogId),
+        approved: [...prev.approved, prev.pending.find(blog => blog.id === blogId)]
+      }));
+    } catch (error) {
+      console.error("Error approving blog:", error);
+    }
+  };
+
+  const handleDeleteBlog = async (blogId, isPending = false) => {
     if (window.confirm("Are you sure you want to delete this blog post?")) {
       try {
         await deleteDoc(doc(firestore, 'blogs', blogId));
-        setBlogs(blogs.filter(blog => blog.id !== blogId));
+        setBlogs(prev => ({
+          pending: isPending ? prev.pending.filter(blog => blog.id !== blogId) : prev.pending,
+          approved: isPending ? prev.approved : prev.approved.filter(blog => blog.id !== blogId)
+        }));
         if (selectedBlog?.id === blogId) {
           setSelectedBlog(null);
         }
@@ -99,15 +129,19 @@ export default function AdminBlogs() {
           <div className="flex justify-between items-start mb-4">
             <h2 className="text-2xl font-bold text-white">{selectedBlog.title}</h2>
             <div className="flex space-x-2">
+              {!selectedBlog.approved && (
+                <button 
+                  onClick={() => handleApproveBlog(selectedBlog.id)}
+                  className="text-green-500 hover:text-green-400 p-1"
+                  title="Approve"
+                >
+                  <Check className="h-5 w-5" />
+                </button>
+              )}
               <button 
-                onClick={() => console.log("Edit functionality to be implemented")}
-                className="text-[rgb(136,58,234)] hover:text-[rgb(224,204,250)] p-1"
-              >
-                <Edit className="h-5 w-5" />
-              </button>
-              <button 
-                onClick={() => handleDeleteBlog(selectedBlog.id)}
+                onClick={() => handleDeleteBlog(selectedBlog.id, !selectedBlog.approved)}
                 className="text-red-500 hover:text-red-400 p-1"
+                title="Delete"
               >
                 <Trash2 className="h-5 w-5" />
               </button>
@@ -122,6 +156,15 @@ export default function AdminBlogs() {
             <div className="flex items-center">
               <Calendar className="h-4 w-4 mr-2" />
               {formatDate(selectedBlog.date)}
+            </div>
+            <div className="flex items-center">
+              <span className={`px-2 py-1 rounded-md text-xs ${
+                selectedBlog.approved 
+                  ? 'bg-green-900 text-green-200' 
+                  : 'bg-yellow-900 text-yellow-200'
+              }`}>
+                {selectedBlog.approved ? 'Approved' : 'Pending'}
+              </span>
             </div>
           </div>
 
@@ -155,7 +198,7 @@ export default function AdminBlogs() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="space-y-6"
+      className="space-y-8"
     >
       <div className="flex justify-between items-center">
         <button
@@ -169,55 +212,111 @@ export default function AdminBlogs() {
 
       <h1 className="text-3xl font-bold text-white mb-6">Manage Blog Posts</h1>
 
-      <div className="grid gap-6">
-        {blogs.length > 0 ? (
-          blogs.map((blog) => (
-            <motion.div
-              key={blog.id}
-              whileHover={{ scale: 1.01 }}
-              className="bg-[#23262d] rounded-lg border border-[rgb(136,58,234)] p-4 cursor-pointer"
-              onClick={() => setSelectedBlog(blog)}
-            >
-              <div className="flex justify-between items-start">
-                <h3 className="text-xl font-semibold text-white mb-2">{blog.title}</h3>
-                <div className="flex space-x-2">
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      console.log("Edit functionality to be implemented");
-                    }}
-                    className="text-[rgb(136,58,234)] hover:text-[rgb(224,204,250)] p-1"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </button>
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteBlog(blog.id);
-                    }}
-                    className="text-red-500 hover:text-red-400 p-1"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+      {/* Pending Approval Section */}
+      {blogs.pending.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-2xl font-semibold text-white border-b border-[rgb(136,58,234)] pb-2">
+            Pending Approval ({blogs.pending.length})
+          </h2>
+          <div className="grid gap-6">
+            {blogs.pending.map((blog) => (
+              <motion.div
+                key={blog.id}
+                whileHover={{ scale: 1.01 }}
+                className="bg-[#23262d] rounded-lg border border-yellow-600 p-4 cursor-pointer"
+                onClick={() => setSelectedBlog(blog)}
+              >
+                <div className="flex justify-between items-start">
+                  <h3 className="text-xl font-semibold text-white mb-2">{blog.title}</h3>
+                  <div className="flex space-x-2">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleApproveBlog(blog.id);
+                      }}
+                      className="text-green-500 hover:text-green-400 p-1"
+                      title="Approve"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteBlog(blog.id, true);
+                      }}
+                      className="text-red-500 hover:text-red-400 p-1"
+                      title="Reject"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center space-x-4 text-[rgb(224,204,250)] text-sm">
-                <div className="flex items-center">
-                  <User className="h-3 w-3 mr-1" />
-                  {blog.author || "Anonymous"}
+                <div className="flex items-center space-x-4 text-[rgb(224,204,250)] text-sm">
+                  <div className="flex items-center">
+                    <User className="h-3 w-3 mr-1" />
+                    {blog.author || "Anonymous"}
+                  </div>
+                  <div className="flex items-center">
+                    <Calendar className="h-3 w-3 mr-1" />
+                    {formatDate(blog.date)}
+                  </div>
                 </div>
-                <div className="flex items-center">
-                  <Calendar className="h-3 w-3 mr-1" />
-                  {formatDate(blog.date)}
+                <p className="text-[rgb(224,204,250)] mt-2 line-clamp-2">
+                  {blog.content}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Approved Posts Section */}
+      <div className="space-y-4">
+        <h2 className="text-2xl font-semibold text-white border-b border-[rgb(136,58,234)] pb-2">
+          Approved Posts ({blogs.approved.length})
+        </h2>
+        {blogs.approved.length > 0 ? (
+          <div className="grid gap-6">
+            {blogs.approved.map((blog) => (
+              <motion.div
+                key={blog.id}
+                whileHover={{ scale: 1.01 }}
+                className="bg-[#23262d] rounded-lg border border-[rgb(136,58,234)] p-4 cursor-pointer"
+                onClick={() => setSelectedBlog(blog)}
+              >
+                <div className="flex justify-between items-start">
+                  <h3 className="text-xl font-semibold text-white mb-2">{blog.title}</h3>
+                  <div className="flex space-x-2">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteBlog(blog.id);
+                      }}
+                      className="text-red-500 hover:text-red-400 p-1"
+                      title="Delete"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
-              </div>
-              <p className="text-[rgb(224,204,250)] mt-2 line-clamp-2">
-                {blog.content}
-              </p>
-            </motion.div>
-          ))
+                <div className="flex items-center space-x-4 text-[rgb(224,204,250)] text-sm">
+                  <div className="flex items-center">
+                    <User className="h-3 w-3 mr-1" />
+                    {blog.author || "Anonymous"}
+                  </div>
+                  <div className="flex items-center">
+                    <Calendar className="h-3 w-3 mr-1" />
+                    {formatDate(blog.date)}
+                  </div>
+                </div>
+                <p className="text-[rgb(224,204,250)] mt-2 line-clamp-2">
+                  {blog.content}
+                </p>
+              </motion.div>
+            ))}
+          </div>
         ) : (
-          <p className="text-white text-center py-8">No blog posts found</p>
+          <p className="text-white text-center py-8">No approved blog posts found</p>
         )}
       </div>
     </motion.div>
