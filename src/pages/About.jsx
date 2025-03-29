@@ -94,8 +94,8 @@ export default function About() {
             <h2 className="text-2xl font-bold text-white mb-4">{title}</h2>
             <p className="text-[rgb(224,204,250)]">
               {title === 'Our Mission'
-                ? 'To provide world-class education and research opportunities in cryptography, fostering innovation and excellence in information security.'
-                : 'To be a leading center of excellence in cryptography research and education, contributing to secure communication technologies.'}
+                ? 'To enable education by maintaing an open-source platform where anyone can access, contribute to, and improve course materials, tools, and community driven learning.'
+                : 'To empower learners worldwide with free, high-quality cryptography education—from basic ciphers to modern encryption.'}
             </p>
           </motion.div>
         ))}
