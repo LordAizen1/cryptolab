@@ -150,13 +150,6 @@ export default function Courses() {
               </motion.div>
             )}
 
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="w-full bg-[rgb(136,58,234)] text-white py-3 px-6 rounded-md hover:bg-[rgb(49,10,101)] transition-colors duration-300"
-            >
-              Enroll Now
-            </motion.button>
           </div>
         </div>
       </motion.div>
