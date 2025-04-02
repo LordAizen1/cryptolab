@@ -12,7 +12,8 @@ import {
   Menu,
   X,
   ArrowUp,
-  Shield // Added Shield icon for admin button
+  Shield,
+  ExternalLink
 } from 'lucide-react';
 
 const navigation = [
@@ -23,56 +24,40 @@ const navigation = [
   { name: 'Members', href: '/members', icon: Users },
   { name: 'Blog', href: '/blog', icon: Newspaper },
   { name: 'Labs', href: '/labs', icon: Flask },
+  { name: 'IACR', href: 'https://iacr.org', icon: ExternalLink, external: true },
   { name: 'About', href: '/about', icon: Info },
 ];
 
 export default function Layout({ children }) {
   const location = useLocation();
-  const navigate = useNavigate(); // Added useNavigate for admin button
+  const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const mobileMenuRef = useRef(null);
   const [indicatorStyle, setIndicatorStyle] = useState({});
   const navRefs = useRef({});
-
-  // State for scroll-to-top button visibility
   const [showScrollToTop, setShowScrollToTop] = useState(false);
 
-  // Scroll event listener to show/hide the scroll-to-top button
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 300) {
-        setShowScrollToTop(true);
-      } else {
-        setShowScrollToTop(false);
-      }
+      setShowScrollToTop(window.scrollY > 300);
     };
-
     window.addEventListener('scroll', handleScroll);
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Function to scroll to the top
   const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth',
-    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Handle admin login button click
   const handleAdminLoginClick = () => {
     navigate('/admin-login');
   };
 
-  // Update indicator position when location changes
   useEffect(() => {
     const currentTab = navRefs.current[location.pathname];
     if (currentTab) {
       const rect = currentTab.getBoundingClientRect();
       const parentRect = currentTab.parentElement.getBoundingClientRect();
-      
       setIndicatorStyle({
         width: `${rect.width}px`,
         transform: `translateX(${rect.left - parentRect.left}px)`,
@@ -80,7 +65,6 @@ export default function Layout({ children }) {
     }
   }, [location]);
 
-  // Close mobile menu when route changes
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [location]);
@@ -99,7 +83,6 @@ export default function Layout({ children }) {
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center">
               <div className="flex items-baseline space-x-4 relative">
-                {/* Animated indicator */}
                 <div 
                   className="absolute bottom-0 h-1 bg-[rgb(136,58,234)] transition-all duration-300 ease-in-out rounded-full"
                   style={indicatorStyle}
@@ -107,6 +90,20 @@ export default function Layout({ children }) {
                 
                 {navigation.map((item) => {
                   const isActive = location.pathname === item.href;
+                  if (item.external) {
+                    return (
+                      <a
+                        key={item.name}
+                        href={item.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-white hover:text-[rgb(224,204,250)] rounded-md px-3 py-2 text-sm font-medium transition-all duration-300 flex items-center"
+                      >
+                        {item.name}
+                        <ExternalLink className="h-4 w-4 ml-1" />
+                      </a>
+                    );
+                  }
                   return (
                     <Link
                       key={item.name}
@@ -124,7 +121,6 @@ export default function Layout({ children }) {
                 })}
               </div>
 
-              {/* Admin Login Button - Added this section */}
               <button
                 onClick={handleAdminLoginClick}
                 className="ml-4 bg-[rgb(136,58,234)] text-white py-2 px-4 rounded-md hover:bg-[rgb(49,10,101)] transition-colors duration-300 flex items-center"
@@ -154,6 +150,20 @@ export default function Layout({ children }) {
                       <div className="grid grid-cols-2 gap-1">
                         {navigation.map((item) => {
                           const isActive = location.pathname === item.href;
+                          if (item.external) {
+                            return (
+                              <a
+                                key={item.name}
+                                href={item.href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`flex flex-col items-center justify-center p-3 rounded-md text-sm font-medium text-white hover:bg-[rgb(49,10,101)] hover:text-[rgb(224,204,250)] transition-all duration-300`}
+                              >
+                                <item.icon className="h-5 w-5 mb-1" />
+                                <span className="text-xs">{item.name}</span>
+                              </a>
+                            );
+                          }
                           return (
                             <Link
                               key={item.name}
@@ -170,7 +180,6 @@ export default function Layout({ children }) {
                           );
                         })}
                       </div>
-                      {/* Added Admin Button to mobile menu */}
                       <button
                         onClick={handleAdminLoginClick}
                         className="w-full flex items-center justify-center p-3 rounded-md text-sm font-medium text-white hover:bg-[rgb(49,10,101)] hover:text-[rgb(224,204,250)] mt-2"
@@ -191,7 +200,6 @@ export default function Layout({ children }) {
         {children}
       </main>
 
-      {/* Scroll-to-top button */}
       {showScrollToTop && (
         <button
           onClick={scrollToTop}
@@ -215,12 +223,23 @@ export default function Layout({ children }) {
               <ul className="grid grid-cols-2 gap-2">
                 {navigation.map((item) => (
                   <li key={item.name}>
-                    <Link
-                      to={item.href}
-                      className="text-white hover:text-[rgb(224,204,250)] hover:bg-[rgb(49,10,101)] px-2 py-1 rounded transition-all duration-300 inline-block"
-                    >
-                      {item.name}
-                    </Link>
+                    {item.external ? (
+                      <a
+                        href={item.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-white hover:text-[rgb(224,204,250)] hover:bg-[rgb(49,10,101)] px-2 py-1 rounded transition-all duration-300 inline-block"
+                      >
+                        {item.name}
+                      </a>
+                    ) : (
+                      <Link
+                        to={item.href}
+                        className="text-white hover:text-[rgb(224,204,250)] hover:bg-[rgb(49,10,101)] px-2 py-1 rounded transition-all duration-300 inline-block"
+                      >
+                        {item.name}
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>
