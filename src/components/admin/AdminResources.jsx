@@ -28,7 +28,13 @@ export default function AdminResources() {
     url: '',
     thumbnail: '',
     videoUrl: '',
+    tags: [],
   });
+
+  const parseTags = (tagsString) => {
+    if (!tagsString) return [];
+    return tagsString.split(',').map(tag => tag.trim()).filter(tag => tag);
+  };
 
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -83,6 +89,7 @@ export default function AdminResources() {
       const resourceData = {
         ...formData,
         year: formData.year || new Date().getFullYear().toString(),
+        tags: formData.tags || [],
       };
 
       if (editingResource?.id) {
@@ -135,6 +142,7 @@ export default function AdminResources() {
         url: '',
         thumbnail: '',
         videoUrl: '',
+        tags: [],
       });
     } catch (error) {
       console.error('Error saving resource:', error);
@@ -215,6 +223,19 @@ export default function AdminResources() {
               />
               <input name="url" placeholder="Paper URL" value={formData.url} onChange={handleChange} required className="w-full bg-[#13151a] text-white rounded-md px-4 py-2 border border-[rgb(136,58,234)]" />
               <input name="year" type="number" placeholder="Year" value={formData.year} onChange={handleChange} required className="w-full bg-[#13151a] text-white rounded-md px-4 py-2 border border-[rgb(136,58,234)]" />
+              <input 
+                name="tags" 
+                placeholder="Tags (comma separated, e.g., Cryptanalysis, Attacks, Cryptography)" 
+                value={formData.tags?.join(', ') || ''} 
+                onChange={(e) => {
+                  const tagsArray = parseTags(e.target.value);
+                  setFormData({...formData, tags: tagsArray});
+                }} 
+                className="w-full bg-[#13151a] text-white rounded-md px-4 py-2 border border-[rgb(136,58,234)]"
+              />
+              <div className="text-sm text-[rgb(224,204,250)] mt-1 mb-4">
+                Enter tags separated by commas (e.g., "Cryptanalysis, Attacks, Cryptography")
+              </div>
             </>
           );
       default:
@@ -257,6 +278,19 @@ export default function AdminResources() {
                 </div>
               ) : resource.authors && (
                 <p className="text-white"><strong>Authors:</strong> {resource.authors}</p>
+              )}
+
+              {resource.tags && type === 'researchPapers' && (
+                <div className="mt-2 mb-2">
+                  <p className="text-white"><strong>Tags:</strong></p>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {resource.tags.map((tag, idx) => (
+                      <span key={idx} className="px-2 py-1 bg-[rgb(49,10,101)] text-[rgb(224,204,250)] rounded-full text-xs">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               )}
               
               {resource.edition && <p className="text-white"><strong>Edition:</strong> {resource.edition}</p>}

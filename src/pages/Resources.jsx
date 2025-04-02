@@ -230,37 +230,46 @@ export default function Resources() {
           </div>
         )}
 
-        {activeTab === 'researchPapers' && selectedPaper === null && (
-          <div className="grid md:grid-cols-2 gap-6">
-            {items[year].map((paper, index) => (
-              <motion.div 
-                key={paper.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                whileHover={{ scale: 1.02 }}
-                className="bg-[#23262d] rounded-lg border border-[rgb(136,58,234)] hover:border-[rgb(224,204,250)] transition-all duration-300"
-              >
-                <div className="p-6">
-                  <div className="mb-4">
-                    <div className="flex justify-between items-center">
-                      <h3 className="text-xl font-bold text-white">{paper.title}</h3>
-                    </div>
-                  </div>
-                  <motion.button
-                    onClick={() => handleViewPaperDetails(paper)}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="w-full flex items-center justify-center bg-[rgb(136,58,234)] text-white px-4 py-2 rounded-md hover:bg-[rgb(49,10,101)] transition-colors duration-300"
-                  >
-                    <span>View Paper Details</span>
-                    <ChevronRight className="ml-2 h-4 w-4" />
-                  </motion.button>
-                </div>
-              </motion.div>
-            ))}
+{activeTab === 'researchPapers' && selectedPaper === null && (
+  <div className="grid md:grid-cols-2 gap-6">
+    {items[year].map((paper, index) => (
+      <motion.div 
+        key={paper.id}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: index * 0.1 }}
+        whileHover={{ scale: 1.02 }}
+        className="bg-[#23262d] rounded-lg border border-[rgb(136,58,234)] hover:border-[rgb(224,204,250)] transition-all duration-300"
+      >
+        <div className="p-6">
+          <div className="mb-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-xl font-bold text-white">{paper.title}</h3>
+            </div>
+            {paper.tags && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {paper.tags.map((tag, idx) => (
+                  <span key={idx} className="px-2 py-1 bg-[rgb(49,10,101)] text-[rgb(224,204,250)] rounded-full text-xs">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
-        )}
+          <motion.button
+            onClick={() => handleViewPaperDetails(paper)}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="w-full flex items-center justify-center bg-[rgb(136,58,234)] text-white px-4 py-2 rounded-md hover:bg-[rgb(49,10,101)] transition-colors duration-300"
+          >
+            <span>View Paper Details</span>
+            <ChevronRight className="ml-2 h-4 w-4" />
+          </motion.button>
+        </div>
+      </motion.div>
+    ))}
+  </div>
+)}
       </div>
     ));
   };
@@ -303,16 +312,23 @@ export default function Resources() {
             {selectedPaper.title}
           </motion.h2>
           
-          {selectedPaper.year && (
-            <motion.p 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
-              transition={{ duration: 0.3, delay: 0.2 }}
-              className="text-[rgb(224,204,250)] mb-6"
-            >
-              Publication Year: {selectedPaper.year}
-            </motion.p>
-          )}
+          <motion.div 
+  initial={{ opacity: 0 }} 
+  animate={{ opacity: 1 }} 
+  transition={{ duration: 0.3, delay: 0.2 }}
+  className="mb-6"
+>
+  <div className="flex flex-wrap gap-2">
+    {selectedPaper.tags?.map((tag, index) => (
+      <span 
+        key={index} 
+        className="px-3 py-1 bg-[rgb(49,10,101)] text-[rgb(224,204,250)] rounded-full text-sm"
+      >
+        {tag}
+      </span>
+    ))}
+  </div>
+</motion.div>
           
           {selectedPaper.authors && (
             <motion.div
