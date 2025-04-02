@@ -17,7 +17,8 @@ export default function AdminMembers() {
     email: '',
     github: '',
     linkedin: '',
-    isHead: false
+    isHead: false,
+    year: ''
   });
 
   const { user } = useAuth();
@@ -68,7 +69,8 @@ export default function AdminMembers() {
       email: '',
       github: '',
       linkedin: '',
-      isHead: false
+      isHead: false,
+      year: ''
     });
   };
 
@@ -142,42 +144,56 @@ export default function AdminMembers() {
       </div>
 
       {editingMember && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-[#23262d] rounded-lg p-6 w-full max-w-2xl max-h-screen overflow-y-auto">
-            <h2 className="text-2xl font-bold text-white mb-4">{editingMember.id ? 'Edit Member' : 'Add Member'}</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[rgb(224,204,250)] mb-2">Name</label>
-                  <input
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                    className="w-full bg-[#13151a] text-white rounded-md px-4 py-2 border border-[rgb(136,58,234)]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[rgb(224,204,250)] mb-2">Role</label>
-                  <input
-                    name="role"
-                    value={formData.role}
-                    onChange={handleChange}
-                    required
-                    className="w-full bg-[#13151a] text-white rounded-md px-4 py-2 border border-[rgb(136,58,234)]"
-                  />
-                </div>
-              </div>
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4">
+      <div className="bg-[#23262d] rounded-lg p-6 w-full max-w-2xl max-h-screen overflow-y-auto">
+        <h2 className="text-2xl font-bold text-white mb-4">{editingMember.id ? 'Edit Member' : 'Add Member'}</h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[rgb(224,204,250)] mb-2">Name</label>
+              <input
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+                className="w-full bg-[#13151a] text-white rounded-md px-4 py-2 border border-[rgb(136,58,234)]"
+              />
+            </div>
+            <div>
+              <label className="block text-[rgb(224,204,250)] mb-2">Role</label>
+              <input
+                name="role"
+                value={formData.role}
+                onChange={handleChange}
+                required
+                className="w-full bg-[#13151a] text-white rounded-md px-4 py-2 border border-[rgb(136,58,234)]"
+              />
+            </div>
+          </div>
 
-              <div>
-                <label className="block text-[rgb(224,204,250)] mb-2">Specialization</label>
-                <input
-                  name="specialization"
-                  value={formData.specialization}
-                  onChange={handleChange}
-                  className="w-full bg-[#13151a] text-white rounded-md px-4 py-2 border border-[rgb(136,58,234)]"
-                />
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[rgb(224,204,250)] mb-2">Specialization</label>
+              <input
+                name="specialization"
+                value={formData.specialization}
+                onChange={handleChange}
+                className="w-full bg-[#13151a] text-white rounded-md px-4 py-2 border border-[rgb(136,58,234)]"
+              />
+            </div>
+            <div>
+              <label className="block text-[rgb(224,204,250)] mb-2">Year</label>
+              <input
+                name="year"
+                type="number"
+                value={formData.year}
+                onChange={handleChange}
+                className="w-full bg-[#13151a] text-white rounded-md px-4 py-2 border border-[rgb(136,58,234)]"
+                placeholder="e.g. 2023"
+              />
+            </div>
+          </div>
+
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -282,6 +298,7 @@ const MemberCard = ({ member, onEdit, onDelete, isAdmin, isHead }) => (
           <h3 className={`${isHead ? 'text-2xl' : 'text-xl'} font-bold text-white`}>{member.name}</h3>
           <p className="text-[rgb(224,204,250)]">{member.role}</p>
           <p className="text-[rgb(224,204,250)]">{member.specialization}</p>
+          {member.year && <p className='text-[rgb(224,204,250)]'>Year: {member.year}</p>}
         </div>
       </div>
 

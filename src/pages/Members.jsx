@@ -28,6 +28,7 @@ const MemberCard = ({ member, index, isHead }) => (
           <h3 className={`${isHead ? 'text-2xl' : 'text-xl'} font-bold text-white`}>{member.name}</h3>
           <p className="text-[rgb(224,204,250)]">{member.role}</p>
           <p className="text-[rgb(224,204,250)]">{member.specialization}</p>
+          {/* {member.year && <p className="text-[rgb(224,204,250)]">Year: {member.year}</p>} */}
         </div>
       </div>
 
@@ -95,6 +96,19 @@ export default function Members() {
   const headMember = members.find(m => m.isHead);
   const otherMembers = members.filter(m => !m.isHead);
 
+  // Group members by year
+  const membersByYear = otherMembers.reduce((acc, member) => {
+    const year = member.year || 'Other';
+    if (!acc[year]) {
+      acc[year] = [];
+    }
+    acc[year].push(member);
+    return acc;
+  }, {});
+
+  // Sort years in descending order
+  const sortedYears = Object.keys(membersByYear).sort((a, b) => b - a);
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -122,31 +136,17 @@ export default function Members() {
           </div>
         )}
 
-        {/* Other Members */}
-        <div className="grid gap-8 md:grid-cols-2 px-4">
-          {otherMembers.map((member, index) => (
-            <MemberCard key={member.id} member={member} index={index + 1} isHead={false} />
-          ))}
-        </div>
-
-        {/* <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.6 }}
-          className="bg-[rgba(49,10,101,0.2)] rounded-lg p-6 mt-8"
-        >
-          <h2 className="text-2xl font-bold text-white mb-4">Join Our Community</h2>
-          <p className="text-[rgb(224,204,250)] mb-4">
-            Interested in joining our research group? We're always looking for passionate researchers and students.
-          </p>
-          <motion.button 
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="bg-[rgb(136,58,234)] text-white py-2 px-4 rounded-md hover:bg-[rgb(49,10,101)] transition-colors duration-300"
-          >
-            View Opportunities
-          </motion.button>
-        </motion.div> */}
+        {/* Members by Year */}
+        {sortedYears.map((year, yearIndex) => (
+          <div key={year} className="space-y-6">
+            <h2 className="text-2xl font-bold text-white px-4">{year}</h2>
+            <div className="grid gap-8 md:grid-cols-2 px-4">
+              {membersByYear[year].map((member, index) => (
+                <MemberCard key={member.id} member={member} index={index + 1} isHead={false} />
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     </motion.div>
   );
