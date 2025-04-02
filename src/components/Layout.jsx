@@ -210,7 +210,7 @@ export default function Layout({ children }) {
       )}
 
       <footer className="bg-[#23262d] text-white mt-auto">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-2">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div>
               <h3 className="text-lg font-semibold mb-4 text-white">VeilCode Labs</h3>
@@ -250,6 +250,9 @@ export default function Layout({ children }) {
                 IIIT Delhi<br />
                 Okhla Industrial Estate, Phase III<br />
                 New Delhi, India
+              </p>
+              <p className="text-[rgb(224,204,250)] mt-4 text-sm">
+                Developed by Md Kaif & Mohd Areeb Ansari
               </p>
             </div>
           </div>
