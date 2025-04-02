@@ -22,6 +22,7 @@ export default function AdminResources() {
     duration: '',
     pdfUrl: '',
     authors: '',
+    abstract: '',
     edition: '',
     year: new Date().getFullYear().toString(),
     url: '',
@@ -31,6 +32,12 @@ export default function AdminResources() {
 
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  // Parse authors from comma-separated string into array
+  const parseAuthors = (authorsString) => {
+    if (!authorsString) return [];
+    return authorsString.split(',').map(author => author.trim()).filter(author => author);
+  };
 
   // Organize resources by year
   const organizeByYear = (docs) => {
@@ -122,6 +129,7 @@ export default function AdminResources() {
         duration: '',
         pdfUrl: '',
         authors: '',
+        abstract: '',
         edition: '',
         year: new Date().getFullYear().toString(),
         url: '',
@@ -182,15 +190,33 @@ export default function AdminResources() {
             <input name="year" type="number" placeholder="Year" value={formData.year} onChange={handleChange} required className="w-full bg-[#13151a] text-white rounded-md px-4 py-2 border border-[rgb(136,58,234)]" />
           </>
         );
-      case 'researchPapers':
-        return (
-          <>
-            <input name="title" placeholder="Title" value={formData.title} onChange={handleChange} required className="w-full bg-[#13151a] text-white rounded-md px-4 py-2 border border-[rgb(136,58,234)]" />
-            <input name="description" placeholder="Description" value={formData.description} onChange={handleChange} required className="w-full bg-[#13151a] text-white rounded-md px-4 py-2 border border-[rgb(136,58,234)]" />
-            <input name="url" placeholder="URL" value={formData.url} onChange={handleChange} required className="w-full bg-[#13151a] text-white rounded-md px-4 py-2 border border-[rgb(136,58,234)]" />
-            <input name="year" type="number" placeholder="Year" value={formData.year} onChange={handleChange} required className="w-full bg-[#13151a] text-white rounded-md px-4 py-2 border border-[rgb(136,58,234)]" />
-          </>
-        );
+        case 'researchPapers':
+          return (
+            <>
+              <input name="title" placeholder="Title" value={formData.title} onChange={handleChange} required className="w-full bg-[#13151a] text-white rounded-md px-4 py-2 border border-[rgb(136,58,234)]" />
+              <textarea 
+                name="authors" 
+                placeholder="Authors (comma separated)" 
+                value={formData.authors} 
+                onChange={handleChange} 
+                required 
+                className="w-full bg-[#13151a] text-white rounded-md px-4 py-2 border border-[rgb(136,58,234)] min-h-[100px]"
+              />
+              <div className="text-sm text-[rgb(224,204,250)] mt-1 mb-4">
+                Enter authors separated by commas (e.g., "John Smith, Jane Doe, Bob Johnson")
+              </div>
+              <textarea 
+                name="abstract" 
+                placeholder="Abstract" 
+                value={formData.abstract} 
+                onChange={handleChange} 
+                required 
+                className="w-full bg-[#13151a] text-white rounded-md px-4 py-2 border border-[rgb(136,58,234)] min-h-[150px]"
+              />
+              <input name="url" placeholder="Paper URL" value={formData.url} onChange={handleChange} required className="w-full bg-[#13151a] text-white rounded-md px-4 py-2 border border-[rgb(136,58,234)]" />
+              <input name="year" type="number" placeholder="Year" value={formData.year} onChange={handleChange} required className="w-full bg-[#13151a] text-white rounded-md px-4 py-2 border border-[rgb(136,58,234)]" />
+            </>
+          );
       default:
         return null;
     }
@@ -219,7 +245,20 @@ export default function AdminResources() {
               <p className="text-[rgb(224,204,250)] mb-4 text-sm">{resource.description}</p>
               {resource.instructor && <p className="text-white"><strong>Instructor:</strong> {resource.instructor}</p>}
               {resource.duration && <p className="text-white"><strong>Duration:</strong> {resource.duration}</p>}
-              {resource.authors && <p className="text-white"><strong>Authors:</strong> {resource.authors}</p>}
+              
+              {resource.authors && type === 'researchPapers' ? (
+                <div className="mt-2 mb-2">
+                  <p className="text-white"><strong>Authors:</strong></p>
+                  <ul className="list-disc pl-5 mt-1 mb-2">
+                    {parseAuthors(resource.authors).map((author, idx) => (
+                      <li key={idx} className="text-white text-sm">{author}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : resource.authors && (
+                <p className="text-white"><strong>Authors:</strong> {resource.authors}</p>
+              )}
+              
               {resource.edition && <p className="text-white"><strong>Edition:</strong> {resource.edition}</p>}
               {resource.year && <p className="text-white"><strong>Year:</strong> {resource.year}</p>}
               {resource.url && (

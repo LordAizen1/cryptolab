@@ -6,7 +6,6 @@ import { collection, getDocs } from "firebase/firestore";
 
 // Video Modal Component
 const VideoModal = ({ isOpen, onClose, videoUrl }) => {
-  // Extract video ID from YouTube URL
   const getYouTubeId = (url) => {
     if (!url) return '';
     const match = url.match(/[?&]v=([^&]+)/);
@@ -53,6 +52,7 @@ const VideoModal = ({ isOpen, onClose, videoUrl }) => {
 export default function Resources() {
   const [activeTab, setActiveTab] = useState('lectures');
   const [selectedVideo, setSelectedVideo] = useState(null);
+  const [selectedPaper, setSelectedPaper] = useState(null);
   const [resources, setResources] = useState({
     lectures: {},
     books: {},
@@ -67,7 +67,6 @@ export default function Resources() {
     { id: 'researchPapers', label: 'Research Papers', icon: LinkIcon },
   ];
 
-  // Organize resources by year
   const organizeByYear = (docs) => {
     const organized = {};
     docs.forEach(doc => {
@@ -98,9 +97,19 @@ export default function Resources() {
     fetchResources();
   }, []);
 
-  // Render content by year
+  const handleViewPaperDetails = (paper) => {
+    setSelectedPaper(paper);
+  };
+
+  // Function to parse author names into an array
+  const parseAuthors = (authorsString) => {
+    if (!authorsString) return [];
+    // Split by comma and trim whitespace
+    return authorsString.split(',').map(author => author.trim()).filter(author => author);
+  };
+
   const renderContentByYear = (items) => {
-    const years = Object.keys(items).sort((a, b) => b.localeCompare(a)); // Sort years descending
+    const years = Object.keys(items).sort((a, b) => b.localeCompare(a));
     
     return years.map(year => (
       <div key={year} className="mb-12">
@@ -221,34 +230,142 @@ export default function Resources() {
           </div>
         )}
 
-        {activeTab === 'researchPapers' && (
+        {activeTab === 'researchPapers' && selectedPaper === null && (
           <div className="grid md:grid-cols-2 gap-6">
             {items[year].map((paper, index) => (
-              <motion.a
+              <motion.div 
                 key={paper.id}
-                href={paper.url}
-                target="_blank"
-                rel="noopener noreferrer"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 whileHover={{ scale: 1.02 }}
-                className="group bg-[#23262d] rounded-lg p-6 border border-[rgb(136,58,234)] hover:border-[rgb(224,204,250)] transition-all duration-300"
+                className="bg-[#23262d] rounded-lg border border-[rgb(136,58,234)] hover:border-[rgb(224,204,250)] transition-all duration-300"
               >
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h3 className="text-xl font-bold text-white mb-2">{paper.title}</h3>
-                    <p className="text-[rgb(224,204,250)]">{paper.description}</p>
+                <div className="p-6">
+                  <div className="mb-4">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-xl font-bold text-white">{paper.title}</h3>
+                    </div>
                   </div>
-                  <ChevronRight className="h-6 w-6 text-[rgb(136,58,234)] group-hover:text-[rgb(224,204,250)] transition-colors duration-300" />
+                  <motion.button
+                    onClick={() => handleViewPaperDetails(paper)}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="w-full flex items-center justify-center bg-[rgb(136,58,234)] text-white px-4 py-2 rounded-md hover:bg-[rgb(49,10,101)] transition-colors duration-300"
+                  >
+                    <span>View Paper Details</span>
+                    <ChevronRight className="ml-2 h-4 w-4" />
+                  </motion.button>
                 </div>
-              </motion.a>
+              </motion.div>
             ))}
           </div>
         )}
       </div>
     ));
   };
+
+  if (activeTab === 'researchPapers' && selectedPaper) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.2 }}
+        className="space-y-8"
+      >
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }} 
+          animate={{ opacity: 1, x: 0 }} 
+          transition={{ duration: 0.3 }} 
+          className="flex items-center mb-8"
+        >
+          <button 
+            onClick={() => setSelectedPaper(null)} 
+            className="flex items-center text-[rgb(136,58,234)] hover:text-[rgb(224,204,250)] transition-colors duration-300"
+          >
+            <ChevronRight className="h-5 w-5 mr-2 transform rotate-180" />
+            Back to Research Papers
+          </button>
+        </motion.div>
+
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ duration: 0.4 }}
+          className="bg-[#23262d] rounded-lg p-6 border border-[rgb(136,58,234)]"
+        >
+          <motion.h2 
+            initial={{ opacity: 0, y: -10 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            transition={{ duration: 0.3, delay: 0.1 }}
+            className="text-2xl font-bold text-white mb-4"
+          >
+            {selectedPaper.title}
+          </motion.h2>
+          
+          {selectedPaper.year && (
+            <motion.p 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              transition={{ duration: 0.3, delay: 0.2 }}
+              className="text-[rgb(224,204,250)] mb-6"
+            >
+              Publication Year: {selectedPaper.year}
+            </motion.p>
+          )}
+          
+          {selectedPaper.authors && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3, delay: 0.3 }}
+              className="mb-6"
+            >
+              <h3 className="text-lg font-semibold text-[rgb(224,204,250)] mb-3">Authors</h3>
+              <ul className="list-disc pl-5 space-y-1">
+                {parseAuthors(selectedPaper.authors).map((author, index) => (
+                  <li key={index} className="text-white">{author}</li>
+                ))}
+              </ul>
+            </motion.div>
+          )}
+          
+          {selectedPaper.abstract && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3, delay: 0.4 }}
+              className="mb-6"
+            >
+              <h3 className="text-lg font-semibold text-[rgb(224,204,250)] mb-2">Abstract</h3>
+              <p className="text-white">{selectedPaper.abstract}</p>
+            </motion.div>
+          )}
+          
+          {selectedPaper.url && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3, delay: 0.5 }}
+              className="flex justify-center mt-8"
+            >
+              <motion.a
+                href={selectedPaper.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="inline-flex items-center bg-[rgb(136,58,234)] text-white px-6 py-3 rounded-md hover:bg-[rgb(49,10,101)] transition-colors duration-300"
+              >
+                <Download className="h-5 w-5 mr-2" />
+                View Full Paper
+              </motion.a>
+            </motion.div>
+          )}
+        </motion.div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
@@ -280,7 +397,10 @@ export default function Resources() {
         {tabs.map((tab) => (
           <motion.button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => {
+              setActiveTab(tab.id);
+              setSelectedPaper(null);
+            }}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className={`flex items-center space-x-2 px-4 py-2 rounded-t-lg transition-all duration-300 ${
@@ -290,7 +410,6 @@ export default function Resources() {
             }`}
           >
             <tab.icon className="h-5 w-5" />
-            {/* Hide text on mobile, show on medium screens and up */}
             <span className="hidden md:inline">{tab.label}</span>
           </motion.button>
         ))}
