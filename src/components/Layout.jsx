@@ -15,6 +15,7 @@ import {
   Shield,
   ExternalLink
 } from 'lucide-react';
+import logo from '/site-icon.png';
 
 const navigation = [
   { name: 'Home', href: '/', icon: Home },
@@ -76,6 +77,11 @@ export default function Layout({ children }) {
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center">
               <Link to="/" className="flex items-center">
+              <img 
+                src={logo} 
+                alt="VeilCode Labs Logo" 
+                className="h-8 w-8 mr-2"  // Adjust size as needed
+              />
                 <span className="ml-2 text-xl font-bold text-white">VeilCode Labs</span>
               </Link>
             </div>
