@@ -27,10 +27,6 @@ This project aims to construct a comprehensive website dedicated to cryptography
   - Video lectures
 - Categorize resources by topic for easy navigation.
 
-### Machine Learning Integration
-- Develop a machine learning model that automatically generates summaries for each chapter or section of the available resources.
-- Summaries will be concise, providing quick overviews of complex cryptographic topics, helping students understand the material more efficiently.
-
 ### Upcoming Projects and Events
 - Feature a section for upcoming cryptography-related projects, conferences, and events.
 - Help students stay informed about opportunities for further involvement in the cryptography community.
@@ -58,11 +54,6 @@ For each course (Applied Cryptography and Topics in Cryptanalysis), provide the 
 - Categorize cryptographic resources into different topics.
 - Each resource will be linked to relevant online materials like textbooks, journal articles, research papers, video lectures, and tutorials.
 - Tag each resource for easy searchability (e.g., keywords, topics, difficulty levels).
-
-### ML-Based Chapter Summaries
-- Use Natural Language Processing (NLP) and machine learning algorithms to analyze the content of each chapter or section from the public resources.
-- Generate concise summaries that highlight the core concepts, key formulas, and essential takeaways.
-- Implement a "summary generation" feature where students can input a chapter or section title and receive a quick, easy-to-read summary of the content.
 
 ### Upcoming Projects and Events Section
 - A calendar or events feed that lists:
