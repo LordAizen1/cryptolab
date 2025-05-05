@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-This project aims to construct a comprehensive website dedicated to cryptography education, specifically focusing on the courses **Applied Cryptography** and **Topics in Cryptanalysis** offered at IIIT Delhi. The website will serve as a centralized platform for students to access detailed course content, previous class materials, and a curated database of publicly available cryptographic resources. Additionally, machine learning techniques will be applied to generate summaries of resource materials, allowing students to easily grasp key concepts from each chapter.
+This project aims to construct a comprehensive website dedicated to cryptography education, specifically focusing on the courses **Applied Cryptography** and **Topics in Cryptanalysis** offered at IIIT Delhi. The website will serve as a centralized platform for students to access detailed course content, previous class materials, and a curated database of publicly available cryptographic resources.
 
 ---
 
@@ -63,7 +63,7 @@ For each course (Applied Cryptography and Topics in Cryptanalysis), provide the 
 
 ### User Interaction and Community Features
 - Discussion boards or forums where students can post questions, share resources, and collaborate.
-- A feedback system to rate the usefulness of resources and ML-generated summaries.
+- A feedback system to rate the usefulness of resources.
 - Option to bookmark favorite resources or save custom summaries.
 
 ---
@@ -74,7 +74,26 @@ For each course (Applied Cryptography and Topics in Cryptanalysis), provide the 
 - Web development knowledge (HTML, CSS, JavaScript)
 - Basic understanding of cryptography concepts
 - Familiarity with **React.js** for frontend development
-- Familiarity with **machine learning techniques**, especially NLP, for summary generation
+
+---
+
+## Preview
+
+Here are some screenshots of the current prototype:
+
+### Home Page
+![Home Page](home-page.png)
+
+### Blog Page
+![Blog Page](blog.png)
+
+### Resources Page
+![Resources Page](resources.png)
+
+### Courses Page
+![Courses Page](courses.png)
+
+---
 
 ## Acknowledgements
 - [React.js](https://reactjs.org/) for building the user interface
@@ -84,5 +103,5 @@ For each course (Applied Cryptography and Topics in Cryptanalysis), provide the 
 ## Contact
 
 Project Maintainers:
-- **Name 1** - [mohdkaif2003@gmail.com](mailto:email@example.com)
-- **Name 2** - [areeb22297@iiitd.ac.in](mailto:email@example.com)
+- **Name 1** - [mohdkaif2003@gmail.com](mailto:mohdkaif2003@gmail.com)
+- **Name 2** - [areeb22297@iiitd.ac.in](mailto:areeb22297@iiitd.ac.in)
